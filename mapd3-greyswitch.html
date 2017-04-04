@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+ <head>
+   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+   <title>My project</title>
+   <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+
+   <script type="text/javascript" src="https://d3js.org/d3-queue.v2.min.js"></script>
+   <link href="style.css" rel="stylesheet">
+   <script type="text/javascript">
+    function draw(error,geo_data,data) {
+      if (error) throw error;
+    "use strict";
+    var margin = 75,
+      width = 600- margin,
+      height=860-margin,
+      minimum=0,
+      maximum=60,
+      minimumColor = "white", maximumColor = "black"
+
+    d3.select("body")
+      .append("h2")
+      .text("Making the Meal Connection in Chicago Communities")
+      .append("h3")
+      .text("This map of Chicago shows food insecurity rates in different communities. This chart can be used in deciding where to target National School Lunch Program support. It's imperative that communities with a substantial need for these lunch programs can get properly connected.")
+      .append("h3")
+      .text("Scroll over the communities to see the shaded percentage of elligable children participating in the 2015 summer lunch program. How can we better support communities with high food insecurity and low program participation?")
+
+
+    var color = d3.scale.linear().domain([minimum, maximum]).range([minimumColor, maximumColor]);
+    //var colorpercent = d3.scale.linear().domain([0, 100]).range([minimumColor, maximbrumColor]);
+
+    var rateById = {};
+    var nameById = {};
+    var ratefedById = {};
+
+    data.forEach(function(d) {
+    rateById[d.Community_upper] = +d.insecurity;
+    nameById[d.Community_upper] = d['Community Area_x'];
+    ratefedById[d.Community_upper] = parseFloat(d['Estimated overall summer lunch participation rate, July 2015']);
+      });
+    var div = d3.select("body").append("div")   
+    .attr("class", "tooltip")               
+    .style('stroke','pink');
+    
+    var svg = d3.select("body")
+      .append("svg")
+      .attr("width",width+margin)
+      .attr("height", height+margin)
+      .append('g')
+      .attr('class','map');
+
+    var projection = d3.geo.albers()
+                          .center([0, 41.83])
+                          .rotate([87.65, 0])
+                          .parallels([40, 45])
+                          .scale(80000)
+                          .translate([2000 / 6, 270]);
+
+    var path = d3.geo.path().projection(projection);
+
+    
+
+    var map = svg.selectAll('path')
+                 .data(geo_data.features)
+                 .enter()
+                 .append('path')
+                 .attr('d',path)
+                 //.style('fill','pink'
+                 .style("fill", function(d) { 
+                  return color(rateById[d.properties.community]); })
+                 .style('stroke','black')
+                 .style('stroke-width',0.5)
+
+
+                   //Adding mouseevents
+                  .on("mouseover", function(d) {
+                    d3.select(this).transition().duration(300)
+                    .style('stroke','#343E54')
+                    .style('stroke-width',2)
+                    .style("fill", function(d) { 
+                  return color(ratefedById[d.properties.community]); });
+                    div.transition().duration(300)
+                    .style('stroke','black')
+                    div.html(nameById[d.properties.community] + " : " + "<br/>" + rateById[d.properties.community]+ "% Food Insecurity" 
+                      + "<br/>" + ratefedById[d.properties.community]+ "% Lunch Participation")
+                    .style("opacity", 1)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY -30) + "px");
+                  })
+                  .on("mouseout", function() {
+                    d3.select(this)
+                    .transition().duration(300)
+                    .style('stroke','black')
+                    .style('stroke-width',0.5)
+                    .style("fill", function(d) { 
+                  return color(rateById[d.properties.community]); });
+                    div.transition().duration(300)
+                    .style("opacity", 0);
+                  })
+
+                  //Adding legend for our Choropleth
+
+  var legend = svg.selectAll("g.legend")
+  .data([0,10,20,30,40,50,60])
+  .enter().append("g")
+  .attr("class", "legend");
+
+  var ls_w = 20, ls_h = 20;
+  var legend_labels=['0%','10%','20%','30%','40%','50%','>60%']
+  legend.append("rect")
+  .attr("x", 20)
+  .attr("y", function(d, i){ return 540 - (i*ls_h) - 2*ls_h;})
+  .attr("width", ls_w)
+  .attr("height", ls_h)
+  .style("fill", function(d, i) { return color(d); })
+  .style("opacity", 0.8);
+
+  legend.append("text")
+  .attr("x", 50)
+  .attr("y", function(d, i){ return 540 - (i*ls_h) - ls_h - 4;})
+  .text(function(d, i){ return legend_labels[i]; })
+  .style('font-family','arial');
+
+  legend.append("text")
+  .attr("x", 0)
+  .attr("y", 520)
+  .text(Labelly)
+  .style('font-family','arial');
+};
+  /*var meals_extent= d3.extent(data, function(d) {
+    return d["Summer meal sites (SFSP and SSO), 2015"]
+  })
+
+  var radius=d3.scale.sqrt()
+                .domain(meals_extent)
+                .range([0,7]);
+
+
+  svg.append('g')
+    .attr("class","bubble")
+    .selectAll("circle")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("fill", "#343E54")
+    .attr("transform", function (d) { 
+      return "translate(" + projection([d.lon, d.lat]) + ")"; })
+
+    .attr("r", function (d) {
+        return radius(d["Summer meal sites (SFSP and SSO), 2015"]); });
+  
+  };*/
+   </script>
+
+ </head>
+ <body>
+   <div id="chart">
+   </div>
+   <script type="text/javascript" src="script.js"></script>
+ </body>
+</html>
